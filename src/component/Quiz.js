@@ -4,36 +4,90 @@ import { DataContext } from "../App"
 
 const Quiz = () => {
     const [current, setCurrent] = useState(0)
-    const { score, setScore, setAppState } = useContext(DataContext)
+    const [selectChoice, setSelectChoice] = useState("") // เก็บตัวเลือกของข้อปัจจุบัน
+    const [userAnswers, setUserAnswers] = useState({}) // เก็บคำตอบทั้งหมด { 0: "A", 1: "C" }
+    const { setScore, setAppState } = useContext(DataContext)
 
-    // ฟังก์ชันตรวจคำตอบและส่งตัวเลือกที่กดเข้ามาตรวจทันที
-    const checkAnswer = (choice) => {
-        // ตรวจสอบว่าคำตอบตรงกับ answer ใน QuestionsData หรือไม่
-        if (choice === QuestionData[current].answer) {
-            setScore(score + 1)
-        }
-        nextQuestion()
+    // ฟังก์ชันเลือกคำตอบ
+    const handleSelectChoice = (choice) => {
+        setSelectChoice(choice)
+        setUserAnswers({
+            ...userAnswers,
+            [current]: choice
+        })
     }
 
+    // ฟังก์ชันย้อนกลับ
+    const prevQuestion = () => {
+        if (current > 0) {
+            const prevIndex = current - 1
+            setCurrent(prevIndex)
+            setSelectChoice(userAnswers[prevIndex] || "") // ดึงคำตอบเดิมมาแสดง
+        }
+    }
+
+    
     const nextQuestion = () => {
         if (current === QuestionData.length - 1) {
+           
+            let totalScore = 0
+            QuestionData.forEach((item, index) => {
+                if (userAnswers[index] === item.answer) {
+                    totalScore += 1
+                }
+            })
+            setScore(totalScore)
             setAppState("score")
         } else {
-            setCurrent(current + 1)
+            const nextIndex = current + 1
+            setCurrent(nextIndex)
+            setSelectChoice(userAnswers[nextIndex] || "") 
         }
     }
 
     return (
         <div className="quiz">
             <h1>{QuestionData[current].question}</h1>
+            
+            {/* รายการช้อยส์คำตอบ */}
             <div className="choices">
-                {/* ส่งชื่อตัวเลือก "A", "B", "C", "D" (หรือตัวแปรข้อความ ให้ตรงกับค่า answer ใน QuestionsData.js) */}
-                <button onClick={() => checkAnswer("A")}>{QuestionData[current].A}</button>
-                <button onClick={() => checkAnswer("B")}>{QuestionData[current].B}</button>
-                <button onClick={() => checkAnswer("C")}>{QuestionData[current].C}</button>
-                <button onClick={() => checkAnswer("D")}>{QuestionData[current].D}</button>
+                <button 
+                    className={selectChoice === "A" ? "selected" : ""} 
+                    onClick={() => handleSelectChoice("A")}
+                >
+                    {QuestionData[current].A}
+                </button>
+                <button 
+                    className={selectChoice === "B" ? "selected" : ""} 
+                    onClick={() => handleSelectChoice("B")}
+                >
+                    {QuestionData[current].B}
+                </button>
+                <button 
+                    className={selectChoice === "C" ? "selected" : ""} 
+                    onClick={() => handleSelectChoice("C")}
+                >
+                    {QuestionData[current].C}
+                </button>
+                <button 
+                    className={selectChoice === "D" ? "selected" : ""} 
+                    onClick={() => handleSelectChoice("D")}
+                >
+                    {QuestionData[current].D}
+                </button>
             </div>
+
             <p>{`${current + 1} / ${QuestionData.length}`}</p>
+
+            {/* ปุ่มนำทาง (ย้อนกลับ / ถัดไป) */}
+            <div className="nav-buttons">
+                <button onClick={prevQuestion} disabled={current === 0}>
+                    ย้อนกลับ
+                </button>
+                <button onClick={nextQuestion} disabled={!selectChoice}>
+                    {current === QuestionData.length - 1 ? "ส่งคำตอบ" : "ถัดไป"}
+                </button>
+            </div>
         </div>
     )
 }
